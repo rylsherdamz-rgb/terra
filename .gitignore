@@ -3,6 +3,7 @@
 # dependencies
 node_modules/
 .app.json
+app.json
 
 # Expo
 .expo/
