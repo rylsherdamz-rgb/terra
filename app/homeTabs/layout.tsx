@@ -1,15 +1,19 @@
 import { Tabs } from "expo-router"
-import {Feather} from "@expo/vector-icons"
+import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context"
 
 function HomeTabs() {
-    
-  return <Tabs>
+    const insets = useSafeAreaInsets()
+  return <Tabs screenOptions={{
+    tabBarStyle : {
+        paddingTop : 100 + insets.top
+    }
+  }} >
     <Tabs.Screen name="Home" 
-    options={{
-        tabBarIcon : () => (<Feather name="home" color={}/>)
-    }} 
+    // options={{
+    //     tabBarIcon : () => (<Feather name="home" color={}/>)
+    // }} 
     />
   </Tabs>
-}
+  }
 
 export default HomeTabs
