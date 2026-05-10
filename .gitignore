@@ -4,6 +4,8 @@
 node_modules/
 .app.json
 app.json
+/supabase
+
 
 # Expo
 .expo/
