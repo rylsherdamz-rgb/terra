@@ -1,7 +1,8 @@
 import { Tabs } from "expo-router"
 import {View} from "react-native"
+import {Feather} from "@expo/vector-icons"
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context"
-import { headerRightComponent } from "@/components/headerComponents"
+import AppBar from "@/components/AppBar"
 
 function HomeTabs() {
     const insets = useSafeAreaInsets()
@@ -11,13 +12,13 @@ function HomeTabs() {
 
     },
         headerStyle : {
-      borderBottomRightRadius : 25
     }
   }} >
+    <AppBar />
     <Tabs.Screen name="Home" 
-    // options={{
-    //     tabBarIcon : () => (<Feather name="home" color={}/>)
-    // }} 
+    options={{
+        tabBarIcon : () => (<Feather name="home" color="#0000" size={18}/>)
+    }} 
     />
   </Tabs>
   }
