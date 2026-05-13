@@ -13,9 +13,8 @@ export default function RootLayout() {
   <ColorThemeProvider>
   <StatusBar barStyle={"dark-content"}  />
   <Stack screenOptions={{
-    headerStyle : {
+  headerShown : false 
 
-    },
 
   }}  />
   </ColorThemeProvider>
