@@ -1,50 +1,43 @@
-# Welcome to your Expo app 👋
+# World Trail: GeoGuessr Duel
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+This app is now a single-game multiplayer GeoGuessr build for Expo + Supabase Realtime.
 
-## Get started
+## What it does
 
-1. Install dependencies
+- Create a private match and share a `game ID`
+- Join a match by `game ID`
+- Use automatch to fill the oldest open lobby
+- Play a 5-round Street View guessing duel
+- Score both players in Supabase and stream updates live
 
-   ```bash
-   npm install
-   ```
+## Required env vars
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Create an `.env` file for Expo with:
 
 ```bash
-npm run reset-project
+EXPO_PUBLIC_SUPABASE_URL=your-project-url
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+EXPO_PUBLIC_MAPS_KEY=your-google-maps-key
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+`EXPO_PUBLIC_MAPS_KEY` must have Maps Embed API access for the Street View panel.
 
-## Learn more
+## Supabase setup
 
-To learn more about developing your project with Expo, look at the following resources:
+Run the migration in [supabase/migrations/20260516_geoguessr.sql](/home/richie/App/world-trail/supabase/migrations/20260516_geoguessr.sql:1).
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+That migration:
 
-## Join the community
+- Drops the old multiplayer tables/functions in `public`
+- Creates the GeoGuessr tables, RPCs, and permissive first-pass RLS policies
+- Seeds playable Street View locations
+- Adds `games`, `game_players`, `game_rounds`, and `round_guesses` to `supabase_realtime`
 
-Join our community of developers creating universal apps.
+## Run locally
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+npm install
+npx expo start
+```
+
+For actual playtesting, run two simulator/device sessions against the same Supabase project.
