@@ -4,9 +4,7 @@ import { useColorScheme, ColorSchemeName } from "react-native";
 export type ThemeModeType = "light" | "dark";
 
 type ThemeContextType = {
-  mode : ThemeModeType,
-  color : typeof Colors.dark | typeof Colors.light
-  toggleTheme : () => void
+  mode : ThemeModeType, color : typeof Colors.dark | typeof Colors.light toggleTheme : () => void
 }
 
 

@@ -2,8 +2,6 @@
 
 # dependencies
 node_modules/
-.app.json
-app.json
 /supabase
 
 
