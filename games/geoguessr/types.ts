@@ -41,7 +41,7 @@ export type GeoGameState = {
   isSolo: boolean;
   myGuess: GeoGuess | null;
   players: GeoPlayerSummary[];
-  revealLocation: GuessLocation & { city: string; country: string } | null;
+  revealLocation: (GuessLocation & { city: string; country: string }) | null;
   roundCount: number;
   status: "waiting" | "active" | "round_result" | "finished";
 };

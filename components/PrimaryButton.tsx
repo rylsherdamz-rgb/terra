@@ -1,4 +1,11 @@
 import { Pressable, StyleSheet, Text, ViewStyle } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type PrimaryButtonProps = {
   disabled?: boolean;
@@ -7,21 +14,10 @@ type PrimaryButtonProps = {
   tone?: "primary" | "secondary" | "ghost";
 };
 
-const toneStyles: Record<
-  NonNullable<PrimaryButtonProps["tone"]>,
-  ViewStyle
-> = {
-  primary: {
-    backgroundColor: "#f97316",
-  },
-  secondary: {
-    backgroundColor: "#2563eb",
-  },
-  ghost: {
-    backgroundColor: "#111827",
-    borderColor: "#334155",
-    borderWidth: 1,
-  },
+const toneStyles: Record<NonNullable<PrimaryButtonProps["tone"]>, ViewStyle> = {
+  primary: { backgroundColor: "#f97316" },
+  secondary: { backgroundColor: "#2563eb" },
+  ghost: { backgroundColor: "#111827", borderColor: "#334155", borderWidth: 1 },
 };
 
 export function PrimaryButton({
@@ -30,21 +26,35 @@ export function PrimaryButton({
   onPress,
   tone = "primary",
 }: PrimaryButtonProps) {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   return (
-    <Pressable
+    <AnimatedPressable
       disabled={disabled}
       onPress={() => {
         void onPress();
       }}
-      style={({ pressed }) => [
+      onPressIn={() => {
+        scale.value = withSpring(0.96, { stiffness: 400, damping: 20 });
+      }}
+      onPressOut={() => {
+        scale.value = withSpring(1, { stiffness: 400, damping: 20 });
+      }}
+      style={[
         styles.button,
         toneStyles[tone],
         disabled ? styles.disabled : null,
-        pressed && !disabled ? styles.pressed : null,
+        animatedStyle,
       ]}
     >
-      <Text style={styles.label}>{label}</Text>
-    </Pressable>
+      <Text style={[styles.label, tone === "ghost" && styles.ghostLabel]}>
+        {label}
+      </Text>
+    </AnimatedPressable>
   );
 }
 
@@ -58,16 +68,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
-  label: {
-    color: "#f8fafc",
-    fontSize: 15,
-    fontWeight: "800",
-    textAlign: "center",
-  },
-  disabled: {
-    opacity: 0.45,
-  },
-  pressed: {
-    transform: [{ scale: 0.985 }],
-  },
+  label: { color: "#f8fafc", fontSize: 15, fontWeight: "800", textAlign: "center" },
+  ghostLabel: { color: "#cbd5e1" },
+  disabled: { opacity: 0.45 },
 });

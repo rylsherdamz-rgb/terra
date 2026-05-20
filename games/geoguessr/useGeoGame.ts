@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase, supabaseConfigError } from "@/utils/supabase";
+import { loadProfile, saveProfile } from "@/utils/profileStorage";
 import type {
   GeoGameState,
   GeoGuess,
@@ -7,7 +8,7 @@ import type {
   GeoPlayerSummary,
   GeoRound,
   GuessLocation,
-} from "@/types/geogame";
+} from "@/games/geoguessr/types";
 
 type BusyState =
   | "idle"
@@ -44,9 +45,7 @@ type RawRound = {
 
 type RawPlayer = {
   profile_id: string;
-  profiles: {
-    display_name: string;
-  } | null;
+  profiles: { display_name: string } | null;
   total_score: number;
 };
 
@@ -62,8 +61,6 @@ type RawRpcResponse = {
   invite_code: string;
   status: GeoGameState["status"];
 };
-
-let cachedPlayer: GeoPlayer | null = null;
 
 function formatGeoGameError(message: string) {
   if (
@@ -95,32 +92,16 @@ function formatGeoGameError(message: string) {
   return message;
 }
 
-function makePlayerId() {
-  return `player_${Date.now().toString(36)}_${Math.random()
-    .toString(36)
-    .slice(2, 10)}`;
-}
-
-function makePlayerName() {
-  const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `Guest-${suffix}`;
-}
-
 function ensureLocalPlayer(): GeoPlayer {
-  if (!cachedPlayer) {
-    cachedPlayer = {
-      id: makePlayerId(),
-      name: makePlayerName(),
-    };
-  }
-
-  return cachedPlayer;
+  const stored = loadProfile();
+  return {
+    id: stored.playerId,
+    name: stored.displayName,
+  };
 }
 
 function normalizeRound(round: RawRound | null | undefined): GeoRound | null {
-  if (!round?.geo_locations) {
-    return null;
-  }
+  if (!round?.geo_locations) return null;
 
   return {
     city: round.geo_locations.city,
@@ -220,9 +201,7 @@ async function syncProfile(player: GeoPlayer) {
     p_profile_id: player.id,
   });
 
-  if (error) {
-    throw error;
-  }
+  if (error) throw error;
 }
 
 async function fetchGameState(gameId: string, playerId: string) {
@@ -255,18 +234,10 @@ async function fetchGameState(gameId: string, playerId: string) {
         .returns<RawGuess[]>(),
     ]);
 
-  if (gameResult.error) {
-    throw gameResult.error;
-  }
-  if (playersResult.error) {
-    throw playersResult.error;
-  }
-  if (roundsResult.error) {
-    throw roundsResult.error;
-  }
-  if (guessesResult.error) {
-    throw guessesResult.error;
-  }
+  if (gameResult.error) throw gameResult.error;
+  if (playersResult.error) throw playersResult.error;
+  if (roundsResult.error) throw roundsResult.error;
+  if (guessesResult.error) throw guessesResult.error;
 
   return normalizeGameState(
     gameResult.data,
@@ -305,9 +276,7 @@ export function useGeoGame() {
   }, [player]);
 
   useEffect(() => {
-    if (!activeGame?.gameId) {
-      return;
-    }
+    if (!activeGame?.gameId) return;
 
     const channel = supabase
       .channel(`geogame:${activeGame.gameId}`)
@@ -322,12 +291,7 @@ export function useGeoGame() {
       )
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "game_players",
-          filter: `game_id=eq.${activeGame.gameId}`,
-        },
+        { event: "*", schema: "public", table: "game_players", filter: `game_id=eq.${activeGame.gameId}` },
         () => {
           void refreshState(activeGame.gameId, player.id).catch((refreshError: Error) => {
             setError(refreshError.message);
@@ -336,12 +300,7 @@ export function useGeoGame() {
       )
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "game_rounds",
-          filter: `game_id=eq.${activeGame.gameId}`,
-        },
+        { event: "*", schema: "public", table: "game_rounds", filter: `game_id=eq.${activeGame.gameId}` },
         () => {
           void refreshState(activeGame.gameId, player.id).catch((refreshError: Error) => {
             setError(refreshError.message);
@@ -350,12 +309,7 @@ export function useGeoGame() {
       )
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "round_guesses",
-          filter: `game_id=eq.${activeGame.gameId}`,
-        },
+        { event: "*", schema: "public", table: "round_guesses", filter: `game_id=eq.${activeGame.gameId}` },
         () => {
           void refreshState(activeGame.gameId, player.id).catch((refreshError: Error) => {
             setError(refreshError.message);
@@ -373,10 +327,7 @@ export function useGeoGame() {
     setSelectedGuess(null);
   }, [currentRound?.id]);
 
-  const runAction = async <T,>(
-    nextBusy: BusyState,
-    action: () => Promise<T>,
-  ) => {
+  const runAction = async <T>(nextBusy: BusyState, action: () => Promise<T>) => {
     setBusy(nextBusy);
     setError(null);
 
@@ -399,9 +350,7 @@ export function useGeoGame() {
 
   const createPrivateGame = async () => {
     await runAction("creating", async () => {
-      if (supabaseConfigError) {
-        throw new Error(supabaseConfigError);
-      }
+      if (supabaseConfigError) throw new Error(supabaseConfigError);
       await syncProfile(player);
       const { data, error: rpcError } = await supabase
         .rpc("create_private_game", {
@@ -410,19 +359,14 @@ export function useGeoGame() {
         })
         .single<RawRpcResponse>();
 
-      if (rpcError) {
-        throw rpcError;
-      }
-
+      if (rpcError) throw rpcError;
       await loadFromRpc(data);
     });
   };
 
   const createSoloGame = async () => {
     await runAction("solo", async () => {
-      if (supabaseConfigError) {
-        throw new Error(supabaseConfigError);
-      }
+      if (supabaseConfigError) throw new Error(supabaseConfigError);
       await syncProfile(player);
       const { data, error: rpcError } = await supabase
         .rpc("create_solo_game", {
@@ -431,39 +375,27 @@ export function useGeoGame() {
         })
         .single<RawRpcResponse>();
 
-      if (rpcError) {
-        throw rpcError;
-      }
-
+      if (rpcError) throw rpcError;
       await loadFromRpc(data);
     });
   };
 
   const startAutomatch = async () => {
     await runAction("matching", async () => {
-      if (supabaseConfigError) {
-        throw new Error(supabaseConfigError);
-      }
+      if (supabaseConfigError) throw new Error(supabaseConfigError);
       await syncProfile(player);
       const { data, error: rpcError } = await supabase
-        .rpc("automatch_game", {
-          p_profile_id: player.id,
-        })
+        .rpc("automatch_game", { p_profile_id: player.id })
         .single<RawRpcResponse>();
 
-      if (rpcError) {
-        throw rpcError;
-      }
-
+      if (rpcError) throw rpcError;
       await loadFromRpc(data);
     });
   };
 
   const joinByCode = async () => {
     await runAction("joining", async () => {
-      if (supabaseConfigError) {
-        throw new Error(supabaseConfigError);
-      }
+      if (supabaseConfigError) throw new Error(supabaseConfigError);
       await syncProfile(player);
       const { data, error: rpcError } = await supabase
         .rpc("join_game_by_code", {
@@ -472,18 +404,13 @@ export function useGeoGame() {
         })
         .single<RawRpcResponse>();
 
-      if (rpcError) {
-        throw rpcError;
-      }
-
+      if (rpcError) throw rpcError;
       await loadFromRpc(data);
     });
   };
 
   const refreshGame = async () => {
-    if (!activeGame?.gameId) {
-      return;
-    }
+    if (!activeGame?.gameId) return;
 
     await runAction("refreshing", async () => {
       await refreshState(activeGame.gameId, player.id);
@@ -491,13 +418,8 @@ export function useGeoGame() {
   };
 
   const submitGuess = async () => {
-    if (!activeGame || !currentRound || !selectedGuess) {
-      return;
-    }
-
-    if (supabaseConfigError) {
-      throw new Error(supabaseConfigError);
-    }
+    if (!activeGame || !currentRound || !selectedGuess) return;
+    if (supabaseConfigError) throw new Error(supabaseConfigError);
 
     setSubmittingGuess(true);
     try {
@@ -508,10 +430,7 @@ export function useGeoGame() {
         p_round_id: currentRound.id,
       });
 
-      if (rpcError) {
-        throw rpcError;
-      }
-
+      if (rpcError) throw rpcError;
       await refreshState(activeGame.gameId, player.id);
     } catch (submitError) {
       const rawMessage =
@@ -524,23 +443,16 @@ export function useGeoGame() {
   };
 
   const nextRound = async () => {
-    if (!activeGame) {
-      return;
-    }
+    if (!activeGame) return;
 
     await runAction("advancing", async () => {
-      if (supabaseConfigError) {
-        throw new Error(supabaseConfigError);
-      }
+      if (supabaseConfigError) throw new Error(supabaseConfigError);
       const { error: rpcError } = await supabase.rpc("advance_round", {
         p_game_id: activeGame.gameId,
         p_profile_id: player.id,
       });
 
-      if (rpcError) {
-        throw rpcError;
-      }
-
+      if (rpcError) throw rpcError;
       await refreshState(activeGame.gameId, player.id);
     });
   };
@@ -567,11 +479,8 @@ export function useGeoGame() {
     setGameIdInput,
     setPlayerName: (name: string) => {
       setPlayer((currentPlayer) => {
-        const nextPlayer = {
-          ...currentPlayer,
-          name,
-        };
-        cachedPlayer = nextPlayer;
+        const nextPlayer = { ...currentPlayer, name };
+        saveProfile({ displayName: name });
         return nextPlayer;
       });
     },
