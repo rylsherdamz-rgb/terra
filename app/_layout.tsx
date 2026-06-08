@@ -1,5 +1,6 @@
 import { Stack } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import {Drawer} from "expo-router/drawer"
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "react-native";
 import "../globals.css";
@@ -9,7 +10,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <StatusBar barStyle={"dark-content"} backgroundColor="#020617" />
-            <Stack screenOptions={{headerShown : false}} /> </SafeAreaProvider>
+            <Drawer screenOptions={{headerShown : false}} /> </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

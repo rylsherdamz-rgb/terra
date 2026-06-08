@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 
 export default function OnBoarding() {
+    // implement layout and design in here
     const insets = useSafeAreaInsets()
     return <View
         style={{paddingTop : false}}
