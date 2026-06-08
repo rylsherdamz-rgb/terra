@@ -1,5 +1,7 @@
-import { Redirect } from "expo-router";
+import { View } from "react-native"
 
-export default function HomeTab() {
-  return <Redirect href={"/hub" as any} />;
+export default function Home() {
+    return <View>
+
+    </View>
 }

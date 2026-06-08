@@ -457,6 +457,14 @@ export function useGeoGame() {
     });
   };
 
+  const resumeGame = async (gameId: string) => {
+    await runAction("refreshing", async () => {
+      if (supabaseConfigError) throw new Error(supabaseConfigError);
+      await syncProfile(player);
+      await refreshState(gameId, player.id);
+    });
+  };
+
   const revealLocation = useMemo(
     () => activeGame?.revealLocation ?? null,
     [activeGame?.revealLocation],
@@ -474,6 +482,7 @@ export function useGeoGame() {
     nextRound,
     player,
     refreshGame,
+    resumeGame,
     revealLocation,
     selectedGuess,
     setGameIdInput,

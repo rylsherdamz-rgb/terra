@@ -8,16 +8,8 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <StatusBar barStyle="light-content" backgroundColor="#020617" />
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen
-            name="games/geoguessr"
-            options={{ animation: "slide_from_right" }}
-          />
-        </Stack>
-      </SafeAreaProvider>
+        <StatusBar barStyle={"dark-content"} backgroundColor="#020617" />
+            <Stack screenOptions={{headerShown : false}} /> </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
